@@ -1,9 +1,42 @@
-cat > .gitignore <<EOF
+# Python
+
+**pycache**/
+*.py[cod]
+*.so
+
+# Virtual environments
+
 venv/
-__pycache__/
-*.pyc
+.env
+
+# macOS
+
 .DS_Store
+
+# Jupyter
+
 .ipynb_checkpoints/
+
+# IDE
+
 .vscode/
 .idea/
-EOF
+
+# Logs
+
+*.log
+
+# Build files
+
+build/
+dist/
+*.egg-info/
+
+# Python cache
+
+.pytest_cache/
+
+# Temporary files
+
+*.tmp
+*.bak
