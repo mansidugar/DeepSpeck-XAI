@@ -1,0 +1,611 @@
+\section{Architecture and Framework}
+
+
+Any explainable model typically terminates at the attribution layer, after finding the important 
+bits. A few of them understand their causal interpretations and validate them with visual 
+representations. But verifying these bits and their significance is a behavioural gap that our 
+frameworks attempt to cover. To address this limitation we developed a multi-layer 
+explainability framework.The neural distinguisher model, introduced by Gohr, forms the base of 
+the research, on which we apply multiple layers of case studies, interpretations and validations. 
+
+The architecture consists of the following layers: 
+
+1.  Data Generation Layer 
+
+2.  Neural Attribution Layer 
+
+3.  Causal Validation Layer 
+
+4.  Faithfulness Evaluation Layer 
+
+5.  Interaction Analysis Layer 
+
+6.  Structural Transport Layer 
+
+7.  Randomized Control Layer 
+
+8.  Structure Destruction Control Layer 
+
+Every layer contributes to the conclusions derived from the framework using perturbation, 
+ablation, transportation, destruction, randomization, causal learning and validation. The complete 
+framework transforms a black box model into an interpretable system. 
+
+\subsection{Dataset Construction and Generation Layer}
+
+Unlike most of the research works that are based on publicly available fixed datasets, 
+cryptographic data has a unique property of generating itself whenever needed, as long as the 
+encryption algorithm, key generation process and input differentials are known. Here we use the 
+Speck32/64 encryption algorithm to generate ciphertext pairs.  
+
+Since the framework is based on binary classification, the algorithm produces two classes of 
+ciphertext pairs. The first class contains structured samples (generated using encrypted plain 
+texts), and the second class contains random samples. The Speck32/64 encrypts random plaintext 
+pairs that are generated using a predefined input differential structure. The differential 
+characteristics are preserved among the structured samples, while the random data loses their 
+features. 
+
+
+Once generated, every ciphertext pair is converted into a 64-dimensional binary feature vector. 
+Since each sample consists of four 16-bit ciphertext words, the binary representation allows the 
+neural network to analyze relationships directly at the bit level. This helps the ARX based 
+operations to work smoothly during the encryption process as the complexity increases. 
+
+The generated binary vectors are then classified into structured or random classes using the 
+pretrained DeepSpeck neural distinguisher. The same dataset used throughout the process, in 
+every layer and experiments conducted. This ensures that any observations made are due to the 
+explainability layers and not the dataset itself. 
+
+   Random Plaintext Pairs 
+
+          ↓ 
+
+  Introduce Differential (Structured Samples) 
+
+          ↓ 
+
+                Speck32/64 Encryption 
+
+          ↓ 
+
+                      Ciphertext Pairs 
+
+          ↓ 
+
+                                            Binary Conversion 
+
+          ↓ 
+
+         64-Dimensional Feature Vector 
+
+          ↓ 
+
+         DeepSpeck Neural Distinguisher 
+
+\subsection{Attribution Layer}
+
+The second layer of the framework aims to answer the most fundamental explainability question: 
+
+Which input bits influence the neural network's decisions? 
+
+To answer this question, Integrated Gradients (IG) was employed. Integrated Gradients is a 
+gradient-based attribution technique that measures how much each input feature contributes to a 
+model's prediction. Unlike ordinary gradients, which often suffer from instability and saturation 
+effects, Integrated Gradients accumulate gradients along a continuous path between a baseline 
+input and the actual sample. 
+
+For each ciphertext sample: 
+
+1.  A dataset of ciphertext pairs was generated using the Speck32/64 cipher. 
+
+
+2.  Samples were passed through the pretrained DeepSpeck model. 
+
+3.  Integrated Gradients was computed for each sample. 
+
+4.  Attribution scores were calculated for all 64 input bits. 
+
+5.  Scores were aggregated across multiple samples. 
+
+6.  A global importance map was generated. 
+
+This process is repeated across thousands of samples. 
+
+The attribution scores are then averaged to obtain a global importance map. 
+
+The resulting importance distribution reveals which regions of the ciphertext the neural network 
+considers most relevant during classification. 
+
+This layer produces the first explainability artifact of the framework: the hotspot map. 
+
+\subsection{Causal Validation Layer}
+
+The previous layer tells us the significant bits but doesn't give reasons that can justify their 
+importance. It doesn’t prove the impact of these bits on the model’s decision.Therefore, the third 
+layer introduces causal validation. 
+
+What happens when the model is deprived of its most important input bits? 
+
+The objective of this stage is to test whether the importance discovered by Integrated Gradients 
+corresponds to genuine influence on model behavior.The procedure is straightforward. 
+
+For each input bit: 
+
+1.  The baseline accuracy of the neural distinguisher was recorded. 
+
+2.  Each input bit was removed individually. 
+
+3.  The modified samples were re-evaluated by the model. 
+
+4.  The change in classification accuracy was measured. 
+
+5.  Accuracy loss was recorded as the causal importance score. 
+
+
+If removing a bit causes a substantial reduction in accuracy, that bit is considered causally 
+important. 
+
+If the accuracy remains unchanged, the bit is considered non-essential regardless of its attribution 
+score. 
+
+\subsection{Faithfulness Verification Layer}
+
+Can the explanations given by the model be trusted? Do their fidelity scores 
+justify their accuracy? Do the explanations generated by the model faithfully reflect 
+its actual decision-making process? 
+
+To answer the above questions, this layer was introduced. Once attribution scores and 
+causal scores are obtained, the next challenge is determining whether they agree.   
+
+This layer evaluates the faithfulness of the explanations. 
+
+Faithfulness refers to the degree to which an explanation reflects the true behavior of the model. 
+
+A faithful explanation should satisfy the following condition: 
+
+High Attribution 
+
+↓ 
+
+        High Causal Impact 
+
+To evaluate this relationship, the framework compares: 
+
+●  Integrated Gradient scores 
+
+●  Causal ablation scores 
+
+Statistical correlation analysis is then performed between both distributions. 
+
+Additionally, overlap analysis is conducted between the most important attribution bits and the 
+most important causal bits. Quantitative approach like top-K overlap is used to measure the 
+extent to which the features highlighted by the attribution method correspond to those that 
+genuinely influence the model's predictions, thereby providing an indication of the faithfulness 
+of the generated explanations. 
+
+The faithfulness of explanations is decided using correlation coefficients, statistical significance 
+value and top-K overlap scores. This stage is the first quantitative assessment of explanation 
+quality. 
+
+
+\subsection{Interaction Analysis Layer}
+
+Cryptographic algorithms rarely depend on a single bit acting independently. Through the 
+repeated mixing steps used in encryption, information from many bits becomes tightly 
+intertwined as it passes through successive rounds. As a result, a neural distinguisher may 
+uncover relationships that arise from multiple bits working together, rather than from any one bit 
+alone. Because of this, evaluating bits in isolation can only provide a partial picture of how the 
+model makes its decisions. This subsection therefore explores that issue in detail. 
+
+Do the most important bits operate independently, or do they work together to 
+
+influence the model's decisions? 
+
+To investigate these hidden dependencies, an Interaction Analysis Layer was introduced after the 
+causal validation stage. The primary goal of this layer is to determine whether the neural network 
+relies on combinations of important bits and to identify how these bits interact with one another 
+during classification. 
+
+The following steps are performed within this layer: 
+
+1.  The highest-ranked bits are selected pairwise 
+
+2.  For each possible pair of important bits, both bits are simultaneously removed from the 
+
+input data 
+
+3.  The modified samples are then passed through the neural distinguisher 
+
+4.  The resulting classification accuracy is recorded 
+
+5.  This combined accuracy loss is compared against the accuracy drops observed when the 
+
+same bits were removed individually 
+
+6.  The interaction scores obtained from all bit pairs are aggregated into an interaction matrix 
+
+that captures the dependency structure learned by the model 
+
+By comparing these values, it becomes possible to measure whether the effect of removing two 
+bits together is greater than, smaller than, or approximately equal to the sum of their individual 
+effects.  
+
+If removing both bits causes a substantially larger performance degradation than expected, the 
+pair is considered to exhibit a cooperative or synergistic relationship. This indicates that the 
+neural network relies on information shared between those bits. Conversely, if the combined 
+effect is smaller than expected, the bits may contain overlapping information, suggesting 
+redundancy within the learned representation. 
+
+
+\subsection{Structural Stability Layer}
+
+Do the learned cryptographic patterns remain stable as the number of encryption 
+
+rounds increases? 
+
+After identifying the single bit, their correlations and synergistic structures, it is important to 
+understand their longevity. Can these discovered patterns survive complex ciphers?  
+
+●  If the same regions of the ciphertext continue to influence the model across multiple 
+
+encryption rounds, it suggests that the neural network has learned genuine cryptographic 
+structures.  
+
+●  Conversely, if the important regions change completely from one round configuration to 
+another, the model may be relying on round-specific artifacts rather than fundamental 
+properties of the cipher. 
+
+To investigate this, a Structural Stability Layer was introduced within the framework. The 
+purpose of this layer is to track how the model's attention changes as the number of encryption 
+rounds increases and to determine whether important patterns persist throughout the encryption 
+process. 
+
+The analysis is performed in the following stages: 
+
+1.  Multiple neural distinguishers trained on different Speck round configurations are 
+
+selected 
+
+2.  Every model is analyzed separately with a different level of cryptographic complexity 
+
+3.  Every round configuration is performed independently and respect importance maps are 
+
+generated 
+
+4.  Each map represents how strongly the model relies on every ciphertext bit while making 
+
+its predictions 
+
+5.  The highest-ranked bits from each attribution map are extracted and analyzed 
+
+6.  Correlation analysis is performed between the importance distributions obtained from 
+
+different round configurations 
+
+7.  The comparison is carried out between: 
+
+●  Early and intermediate rounds 
+
+●  Intermediate and later rounds 
+
+●  Early and later rounds 
+
+8.  The framework then examines how important regions evolve across rounds 
+
+
+9.  We study how groups of important bits shift, expand, contract, or migrate between 
+
+neighboring positions, leading to a phenomenon known as pattern transport 
+
+10. The resulting correlation values are used to assess structural stability. 
+
+●  High correlation indicates that the model continues to focus on similar regions 
+across multiple rounds. This suggests that the neural distinguisher has learned 
+persistent cryptographic structures rather than isolated patterns. 
+
+●  Moderate correlation indicates partial stability, where some important regions 
+remain relevant while others evolve as the cipher becomes more complex. 
+
+●  Low correlation indicates that the model changes its attention significantly 
+between round configurations. Such behavior may suggest reliance on 
+round-specific features or unstable decision-making strategies. 
+
+The Structural Stability Layer therefore provides a longitudinal view of the neural network's 
+behavior. Rather than analyzing importance at a single point in time, it examines how learned 
+representations evolve throughout the encryption process. This makes it possible to determine 
+whether the explanations discovered by the framework represent stable cryptographic knowledge 
+or temporary patterns that emerge only under specific round configurations. 
+
+\subsection{Control Validation Layer}
+
+The final stage of the framework consists of control experiments. We need to know that our 
+explanations were based on relevant patterns and structures. Control experiments are essential 
+because they test whether the discovered explanations remain valid under extreme conditions. 
+
+Without controls, it is impossible to determine whether observed patterns represent genuine 
+cryptographic structure or random artifacts. 
+
+For this reason, two independent control experiments were performed. 
+
+●  Randomized Control Validation 
+
+In this experiment, the underlying structure of the input data is randomized while preserving the 
+overall data format. 
+
+The purpose is to evaluate whether attribution hotspots emerge even when meaningful 
+cryptographic information is absent. 
+
+If similar hotspot patterns appear after randomization, the explanations may be unreliable. 
+
+
+Conversely, substantial differences indicate that the discovered hotspots are likely linked to 
+genuine cryptographic structure. 
+
+This experiment acts as a sanity check for the entire explainability pipeline. 
+
+●  True Structure Destruction Control 
+
+This experiment represents the most rigorous validation stage of the framework. 
+
+Instead of randomizing selected components, the cryptographic structure itself is intentionally 
+destroyed. 
+
+The modified dataset retains the same dimensions and statistical format but no longer preserves 
+the meaningful relationships generated by the Speck encryption process. 
+
+The explainability pipeline is then repeated. 
+
+If the discovered hotspots disappear or change significantly, it provides strong evidence that the 
+original explanations were linked to real cipher structure. 
+
+If the hotspots remain unchanged, the explanations may be capturing dataset artifacts rather than 
+cryptographic behavior. 
+
+This experiment provides the strongest form of validation within the framework. 
+
+\subsection{Framework Summary}
+
+The proposed framework progressively transforms neural cryptanalysis from a prediction task 
+into an interpretable scientific investigation.The complete workflow can be summarized as: 
+
+Data Generation 
+
+          ↓ 
+
+Integrated Gradients Attribution 
+
+          ↓ 
+
+Causal Validation 
+
+          ↓ 
+
+      Faithfulness Verification 
+
+          ↓ 
+
+         Interaction Analysis 
+
+          ↓ 
+
+
+    Structural Stability Analysis 
+
+          ↓ 
+
+Randomized Control Validation 
+
+          ↓ 
+
+Structure Destruction Validation 
+
+↓ 
+
+        Statistical Interpretation 
+
+Each layer contributes a distinct form of evidence. Together, these layers provide a 
+comprehensive evaluation of whether the neural distinguisher has learned genuine cryptographic 
+structure and whether the generated explanations can be trusted. 
+
+3.6. Testing methodology 
+
+3.6.1 Experimental Setup 
+
+The proposed explainability framework was evaluated using the publicly available DeepSpeck 
+neural distinguisher for the Speck32/64 block cipher. The objective of the experimental setup 
+was to provide a controlled environment for analyzing the internal decision-making process of 
+the neural cryptanalysis model. 
+
+The experimental setup consisted of the following components: 
+
+1. Neural Model 
+
+●  Pretrained DeepSpeck neural distinguisher 
+
+●  Trained for ciphertext pair classification 
+
+●  Used as the base model for all explainability experiments 
+
+2. Programming Environment 
+
+●  Python 
+
+●  TensorFlow / Keras 
+
+●  NumPy 
+
+●  Statistical analysis libraries 
+
+These tools were used for model execution, attribution analysis, causal interventions, and result 
+evaluation. 
+
+        
+
+3. Dataset Generation 
+
+●  Dataset generated directly using the Speck32/64 encryption algorithm 
+
+●  Structured ciphertext pairs generated using differential cryptanalysis principles 
+
+●  Random ciphertext pairs generated as the negative class 
+
+●  Each sample converted into a 64-bit binary feature vector 
+
+4. Experimental Consistency 
+
+●  The same data generation procedure was maintained throughout the framework 
+
+●  All explainability experiments were performed on a controlled input distribution 
+
+●  This ensured fair comparison between different analysis layers 
+
+5. Evaluation Strategy 
+ The framework was not evaluated solely on prediction accuracy. Instead, multiple aspects of 
+model behavior were examined: 
+
+●  Bit-level importance 
+
+●  Causal influence 
+
+●  Explanation faithfulness 
+
+●  Feature interactions 
+
+●  Structural stability across rounds 
+
+●  Robustness under control experiments 
+
+By combining a benchmark neural cryptanalysis model with controlled data generation and 
+multiple validation procedures, the experimental setup provides a reliable environment for 
+investigating how and why the neural distinguisher makes its predictions. 
+
+3.6.2 Attribution Evaluation Methodology 
+
+How was feature importance identified within the neural distinguisher? 
+
+The Attribution Layer was evaluated using the Integrated Gradients (IG) technique. The 
+objective of this experiment was to identify which ciphertext bits contributed most strongly to 
+the model's predictions. The results that validated this layer were: 
+
+
+●  Bit-level importance scores 
+
+●  Ranked list of influential bits 
+
+●  Global attribution map 
+
+This experiment provided the initial explanation of the model's behavior and served as the 
+foundation for all subsequent validation stages. 
+
+3.6.3 Causal Validation Methodology 
+
+Are the bits identified by Integrated Gradients genuinely responsible for the model's 
+
+decisions? 
+
+To validate the importance scores obtained from Integrated Gradients, a causal intervention 
+experiment was performed using single-bit ablation. Certain factors were responsible for the 
+conclusions drawn from this layer. Like, 
+
+●  Accuracy drop for every input bit 
+
+●  Causal importance ranking 
+
+●  Identification of truly influential features 
+
+This experiment transformed attribution-based observations into experimentally verified causal 
+evidence. 
+
+3.6.4 Faithfulness Evaluation Methodology 
+
+Do the explanations generated by the model faithfully reflect its actual 
+
+decision-making process? 
+
+The purpose of this experiment was to determine whether the attribution scores produced by 
+Integrated Gradients aligned with the causal importance measurements obtained through 
+ablation. 
+
+Procedure: 
+
+●  Integrated Gradients scores were collected. 
+
+●  Causal importance scores were collected. 
+
+●  Correlation analysis was performed between the two rankings. 
+
+
+●  Top-k overlap analysis was conducted. 
+
+●  Agreement scores were calculated. 
+
+Evaluation Measures: 
+
+●  Pearson Correlation 
+
+●  Top-10 Overlap 
+
+●  Top-20 Overlap 
+
+●  Agreement Score 
+
+Higher agreement indicates that the generated explanations accurately reflect the model's 
+behavior. 
+
+3.6.5 Interaction Analysis Methodology 
+
+This experiment investigated whether the neural distinguisher relied on isolated features or 
+groups of interacting features. Certain conclusions were drawn using the generated measures 
+below, 
+
+●  Pairwise interaction matrix 
+
+●  Synergy scores 
+
+●  Redundancy scores 
+
+The experiment revealed hidden dependencies among important features learned by the model. 
+
+3.6.6 Structural Stability Evaluation Methodology 
+
+This experiment examined whether the patterns identified by the model persisted across different 
+levels of encryption complexity. Comparisons performed were evaluated using, 
+
+●  Round-to-round correlation scores 
+
+●  Pattern transport measurements 
+
+●  Stability indicators 
+
+This experiment assessed whether the model had learned persistent cryptographic structures or 
+round-specific patterns. 
+
+ 
+ 
+
+3.6.7 Control Validation Methodology 
+
+Control experiments were conducted using randomized data. Below given are the steps it 
+followed to conduct this experiment. 
+
+●  Attribution maps were generated using genuine ciphertext samples. 
+
+●  A second dataset with randomized structure was created. 
+
+●  The same explainability procedures were applied to both datasets. 
+
+●  Importance distributions were compared. 
+
+●  Entropy and similarity measures were calculated. 
+
+Evaluation Measures: 
+
+●  Entropy 
+
+●  Correlation 
+
+●  Importance Distribution Similarity 
+
+This experiment served as a sanity check and verified whether the framework was identifying 
+meaningful cryptographic patterns rather than random noise. 
+
+4. RESULTS AND OUTCOMES 
