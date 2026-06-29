@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use this repository in your research, please cite the accompanying paper."
+
+authors:
+
+* family-names: Dugar
+  given-names: Mansi
+
+title: "Explainability Framework for Neural Cryptanalysis of Speck32/64"
+
+version: 1.0.0
+
+date-released: 2026-06-29
+
+repository-code: https://github.com/mansidugar/DeepSpeck-XAI
+
+license: MIT
+
+keywords:
+
+* Neural Cryptanalysis
+* Explainable AI
+* Deep Learning
+* Speck32/64
+* Integrated Gradients
+* Cryptography
+* XAI
+
+abstract: >
+A comprehensive explainability framework for interpreting
+DeepSpeck neural distinguishers using attribution analysis,
+causal validation, interaction analysis, structural stability,
+and control experiments.
+
+preferred-citation:
+type: article
+authors:
+- family-names: Dugar
+given-names: Mansi
+title: Explainability Framework for Neural Cryptanalysis of Speck32/64
+year: 2026
